@@ -4,7 +4,8 @@ import configparser
 # CONFIG
 config = configparser.ConfigParser()
 config.read('dwh.cfg')
-IAM_ROLE_ARN = config.get("IAM_ROLE", "ARN")
+# IAM_ROLE_ARN = config.get("IAM_ROLE", "ARN")
+IAM_ROLE_ARN = config.get("DWH", "DWH_RS_ROLE_ARN")
 
 # DROP TABLES
 
