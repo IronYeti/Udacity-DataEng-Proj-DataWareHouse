@@ -158,8 +158,8 @@ SELECT
 
 user_table_insert = ("""
 INSERT INTO users (user_id, first_name, last_name, gender, level)
-    SELECT 
-        DISTINCT(userId) AS user_id,
+    SELECT DISTINCT
+        userId AS user_id,
         firstName AS first_name,
         lastName AS last_name,
         gender,
@@ -182,8 +182,8 @@ INSERT INTO songs (song_id, title, artist_id, year, duration)
 
 artist_table_insert = ("""
 INSERT INTO artists (artist_id, name, location, latitude, longitude)
-    SELECT 
-        DISTINCT(artist_id),
+    SELECT DISTINCT
+        artist_id,
         artist_name AS name,
         artist_location AS location,
         CAST(artist_latitude AS NUMERIC) as latitude,
@@ -193,7 +193,7 @@ INSERT INTO artists (artist_id, name, location, latitude, longitude)
 
 time_table_insert = ("""
 INSERT INTO time (start_time, hour, day, week, month, year, weekday)
-    SELECT
+    SELECT DISTINCT
         TIMESTAMP 'epoch' + ts/1000 * INTERVAL '1 second' AS start_time,
         EXTRACT(HOUR from start_time) as hour,
         EXTRACT(DAY from start_time) as day,
