@@ -1,3 +1,5 @@
 dwh.cfg
 
 *.pyc
+
+create_tables.pyc

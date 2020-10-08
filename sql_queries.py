@@ -1,40 +1,39 @@
 import configparser
 
-
 # CONFIG
 
 config = configparser.ConfigParser()
 config.read('dwh.cfg')
 # IAM_ROLE_ARN = config.get("IAM_ROLE", "ARN")
 
-S3_LOG_DATA = config.get("S3", "LOG_DATA")
-S3_SONG_DATA = config.get("S3", "SONG_DATA")
+S3_LOG_DATA             = config.get("S3", "LOG_DATA")
+S3_SONG_DATA            = config.get("S3", "SONG_DATA")
 S3_EVENT_DATA_JSON_PATH = config.get("S3", "LOG_JSONPATH")
 
 
 # DROP TABLES
 
 staging_events_table_drop = "DROP TABLE IF EXISTS staging_events CASCADE;"
-staging_songs_table_drop = "DROP TABLE IF EXISTS staging_songs CASCADE;"
-
-songplay_table_drop = "DROP TABLE IF EXISTS songplays CASCADE;"
-user_table_drop = "DROP TABLE IF EXISTS users CASCADE;"
-song_table_drop = "DROP TABLE IF EXISTS songs CASCADE;"
-artist_table_drop = "DROP TABLE IF EXISTS artists CASCADE;"
-time_table_drop = "DROP TABLE IF EXISTS time CASCADE;"
+staging_songs_table_drop  = "DROP TABLE IF EXISTS staging_songs CASCADE;"
+songplay_table_drop       = "DROP TABLE IF EXISTS songplays CASCADE;"
+user_table_drop           = "DROP TABLE IF EXISTS users CASCADE;"
+song_table_drop           = "DROP TABLE IF EXISTS songs CASCADE;"
+artist_table_drop         = "DROP TABLE IF EXISTS artists CASCADE;"
+time_table_drop           = "DROP TABLE IF EXISTS time CASCADE;"
 
 # CREATE TABLES
 
+#   id              INT GENERATED ALWAYS AS IDENTITY,
+
 staging_events_table_create= ("""
 CREATE TABLE IF NOT EXISTS staging_events (
-    id              INT GENERATED ALWAYS AS IDENTITY,
     artist          VARCHAR,
     auth            VARCHAR,
     firstName       VARCHAR,
     gender          VARCHAR,
     itemInSession   SMALLINT,
     lastName        VARCHAR,
-    length          VARCHAR,
+    length          NUMERIC,
     level           VARCHAR,
     location        VARCHAR,
     method          VARCHAR,
@@ -49,18 +48,19 @@ CREATE TABLE IF NOT EXISTS staging_events (
 );
 """)
 
+#    id                  INT GENERATED ALWAYS AS IDENTITY,
+
 staging_songs_table_create = ("""
 CREATE TABLE IF NOT EXISTS staging_songs (
-    id                  INT GENERATED ALWAYS AS IDENTITY,
     num_songs           INT,
     artist_id           VARCHAR,
-    artist_latitude     VARCHAR,
-    artist_longitude    VARCHAR,
+    artist_latitude     NUMERIC,
+    artist_longitude    NUMERIC,
     artist_location     VARCHAR,
     artist_name         VARCHAR,
     song_id             VARCHAR,
     title               VARCHAR,
-    duration            VARCHAR,
+    duration            NUMERIC,
     year                SMALLINT
 );
 """)
@@ -69,12 +69,12 @@ CREATE TABLE IF NOT EXISTS staging_songs (
 
 songplay_table_create = ("""
 CREATE TABLE IF NOT EXISTS songplays (
-    id          INT GENERATED ALWAYS AS IDENTITY,
-    start_time  TIMESTAMP NOT NULL,
+    id          INT IDENTITY(0, 1) PRIMARY KEY,
+    start_time  TIMESTAMP,
     user_id     VARCHAR REFERENCES users(user_id) NOT NULL,
     level       VARCHAR,
-    song_id     VARCHAR REFERENCES songs(song_id),
-    artist_id   VARCHAR REFERENCES artists(artist_id),
+    song_id     VARCHAR,
+    artist_id   VARCHAR REFERENCES artists(artist_id) NOT NULL,
     session_id  INT,
     location    VARCHAR,
     user_agent  VARCHAR
@@ -83,9 +83,9 @@ CREATE TABLE IF NOT EXISTS songplays (
 
 user_table_create = ("""
 CREATE TABLE IF NOT EXISTS users (
-    user_id     VARCHAR PRIMARY KEY,
-    first_name  VARCHAR NOT NULL,
-    last_name   VARCHAR NOT NULL,
+    user_id     VARCHAR NOT NULL PRIMARY KEY,
+    first_name  VARCHAR,
+    last_name   VARCHAR,
     gender      VARCHAR,
     level       VARCHAR
 );
@@ -93,9 +93,9 @@ CREATE TABLE IF NOT EXISTS users (
 
 song_table_create = ("""
 CREATE TABLE IF NOT EXISTS songs (
-    song_id     VARCHAR PRIMARY KEY,
-    title       VARCHAR NOT NULL,
-    artist_id   VARCHAR NOT NULL,
+    song_id     VARCHAR NOT NULL PRIMARY KEY,
+    title       VARCHAR,
+    artist_id   VARCHAR,
     year        SMALLINT,
     duration    VARCHAR
 );
@@ -103,8 +103,8 @@ CREATE TABLE IF NOT EXISTS songs (
 
 artist_table_create = ("""
 CREATE TABLE IF NOT EXISTS artists (
-    artist_id   VARCHAR PRIMARY KEY,
-    name        VARCHAR NOT NULL,
+    artist_id   VARCHAR NOT NULL PRIMARY KEY,
+    name        VARCHAR,
     location    VARCHAR,
     latitude    NUMERIC,
     longitude   NUMERIC
@@ -146,18 +146,18 @@ staging_songs_copy = f"""
 
 songplay_table_insert = ("""
 INSERT INTO songplays (start_time, user_id, level, song_id, artist_id, session_id, location, user_agent)
-SELECT 
-    TIMESTAMP 'epoch' + ts/1000 * INTERVAL '1 second' AS start_time,
-    e.userId AS user_id,
-    e.level,
-    s.song_id,
-    s.artist_id,
-    e.sessionId AS session_id,
-    e.location,
-    e.userAgent AS user_agent
+SELECT DISTINCT
+        TIMESTAMP 'epoch' + ts/1000 * INTERVAL '1 second' AS start_time,
+        e.userId AS user_id,
+        e.level,
+        s.song_id,
+        s.artist_id,
+        e.sessionId AS session_id,
+        e.location,
+        e.userAgent AS user_agent
     FROM staging_songs s
     RIGHT JOIN staging_events e ON s.artist_name = e.artist AND s.title = e.song
-    WHERE e.page = 'NextSong'
+    WHERE e.page = 'NextSong' AND song_id IS NOT NULL
 """)
 
 user_table_insert = ("""
@@ -175,13 +175,14 @@ INSERT INTO users (user_id, first_name, last_name, gender, level)
 
 song_table_insert = ("""
 INSERT INTO songs (song_id, title, artist_id, year, duration)
-    SELECT 
+    SELECT DISTINCT
         song_id,
         title,
         artist_id,
         year,
         duration
     FROM staging_songs
+    WHERE song_id IS NOT NULL
 """)
 
 artist_table_insert = ("""
@@ -193,6 +194,7 @@ INSERT INTO artists (artist_id, name, location, latitude, longitude)
         CAST(artist_latitude AS NUMERIC) as latitude,
         CAST(artist_longitude AS NUMERIC) as longitude
     FROM staging_songs
+    WHERE artist_id IS NOT NULL
 """)
 
 time_table_insert = ("""
@@ -211,12 +213,12 @@ INSERT INTO time (start_time, hour, day, week, month, year, weekday)
 # VALIDATION QUERIES
 
 check_staging_events = "SELECT COUNT(*) FROM staging_events;"
-check_staging_songs = "SELECT COUNT(*) FROM staging_songs;"
-check_songplays = "SELECT COUNT(*) FROM songplays;"
-check_users = "SELECT COUNT(*) FROM users;"
-check_songs = "SELECT COUNT(*) FROM songs;"
-check_artists = "SELECT COUNT(*) FROM artists;"
-check_time = "SELECT COUNT(*) FROM time;"
+check_staging_songs  = "SELECT COUNT(*) FROM staging_songs;"
+check_songplays      = "SELECT COUNT(*) FROM songplays;"
+check_users          = "SELECT COUNT(*) FROM users;"
+check_songs          = "SELECT COUNT(*) FROM songs;"
+check_artists        = "SELECT COUNT(*) FROM artists;"
+check_time           = "SELECT COUNT(*) FROM time;"
 
 # QUERY LISTS
 
