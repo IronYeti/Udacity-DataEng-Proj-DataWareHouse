@@ -2,12 +2,15 @@ import configparser
 
 
 # CONFIG
+
 config = configparser.ConfigParser()
 config.read('dwh.cfg')
 # IAM_ROLE_ARN = config.get("IAM_ROLE", "ARN")
-DWH_IAM_ROLE_ARN = config.get("DWH", "DWH_ROLE_ARN")
-# S3_EVENT_DATA_JSON_PATH = config.get("S3", "log_data_json_path")
-S3_EVENT_DATA_JSON_PATH="s3://udacity-dend/log_json_path.json"
+
+S3_LOG_DATA = config.get("S3", "LOG_DATA")
+S3_SONG_DATA = config.get("S3", "SONG_DATA")
+S3_EVENT_DATA_JSON_PATH = config.get("S3", "LOG_JSONPATH")
+
 
 # DROP TABLES
 
@@ -122,21 +125,21 @@ CREATE TABLE IF NOT EXISTS time (
 
 # STAGING TABLES
 
-staging_events_copy = ("""
-COPY staging_events 
-FROM 's3://udacity-dend/log_data' 
-CREDENTIALS 'aws_iam_role={}'
-JSON '{}'
-REGION 'us-west-2';
-""").format(DWH_IAM_ROLE_ARN, S3_EVENT_DATA_JSON_PATH)
+staging_events_copy = f"""
+    COPY staging_events 
+    FROM '{S3_LOG_DATA}' 
+    CREDENTIALS 'aws_iam_role=_arnrole_'
+    JSON '{S3_EVENT_DATA_JSON_PATH}'
+    REGION 'us-west-2';
+"""
 
-staging_songs_copy = ("""
-COPY staging_songs
-FROM 's3://udacity-dend/song_data' 
-CREDENTIALS 'aws_iam_role={}'
-JSON 'auto'
-REGION 'us-west-2';
-""").format(DWH_IAM_ROLE_ARN)
+staging_songs_copy = f"""
+    COPY staging_songs
+    FROM '{S3_SONG_DATA}' 
+    CREDENTIALS 'aws_iam_role=_arnrole_'
+    JSON 'auto'
+    REGION 'us-west-2';
+    """
 
 
 # FINAL TABLES

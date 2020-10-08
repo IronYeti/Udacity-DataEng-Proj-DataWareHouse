@@ -1,26 +1,38 @@
-# Sparkify - Song Play Analysis
+# Sparkify Moves To The Cloud
 
 ## Overview
 
-This program will *extract* data from song & log files, *transform* the data, and then *load* it into a database. A star schema was chosen to make data analysis easier for the user.  
+This program will do an ETL of Sparkify data, copying it from an S3 bucket to stage it on an AWS RedShift cluster, then transform that data into analytics tables also on RedShift.
 
+This program satifies requirements of the Udacity Data Engineering Nanodegree program for Data Warehouse Project #3.
+
+
+## Prequisites
+
+1. Make sure the raw data files are properly located in S3 bucket with path `s3://udacity-dend/`.
+2. The configuration file contains an AWS key & secret. The key & secret must come from an admin user that was set up with _programmatic access_ enabled.
+3. The files `etl.py`, `dwh.cfg` & `sql_queries.py` are in the same diectory.
 
 ## How to run
 
-1. Make sure the data files are properly located (see Technical Overview)
-2. Run the python script `!python3 create_tables.py`
-3. Run the python script `!python3 etl.py`
-    
+1. Run the python script `etl.py` from terminal.
 
-## Requirements
+## Expected output is
 
-### AWS S3 bucket
+1. AWS role is created
+2. Temporary Redshift cluster is created
+3. Connect to the database
+4. Create all database tables (staging, dimensional and fact tables)
+5. Copy data from S3 to staging tables
+6. Transform data from staging tables to dimension and fact tables
+7. Validate that the tables were populated correctly
+8. Delete the cluster and role (since this is an academic exercise we don't want to persist the data)
 
-The raw data must be keep in an AWS S3 bucket with path `s3://udacity-dend/`
+---
 
-### Configuration file
+## Configuration file
 
-A file named dwh.cfg must exist in the same directory as etl.py.  It must contain these entries:
+A file named `dwh.cfg` must contain these entries:
 
 ```
 [AWS]
@@ -37,28 +49,38 @@ dwh_db = dwh
 dwh_db_user = dwhadmin
 dwh_db_password = Passw0rd
 dwh_port = 5439
+
+[S3]
+LOG_DATA = s3://udacity-dend/log_data
+LOG_JSONPATH = s3://udacity-dend/log_json_path.json
+SONG_DATA = s3://udacity-dend/song_data
 ```
 
-## Technical Overview
 
-### Raw data
+---
 
-Files must be in JSON format. 
-Files must be stored as follows:
+## Raw Data
 
-#### Song Files
-- Must be placed into the 'data/song_data' folder.  They can be optionally be organized in subfolders under that (e.g. data/song_data/A/B/C)
+Files must be stored in `s3://udacity-dend/` bucket.
+
+
+### Song Files
+- Must be loca.  They can be optionally be organized in subfolders under that (e.g. data/song_data/A/B/C)
 - Must be JSON formatted and contain at least the following keys: song_id, title, artist_id, year, duration, artist_id, artist_name, artist_location, artist_latitude, artist_longitude
 
 
-#### Log files
+### Log files
 - Must be placed into the 'data/log_data' folder.  They can be optionally be organized in subfolders under that (e.g. data/log_data/A/B/C)
 - Must be JSON formatted and contain at least the following keys: userId, firstName, lastName, gender, level, ts (timestamp in milliseconds), page, sessionId, location, userAgent, artist, song
 
 
-### Database schema
+### Log data json path
+- Must be a JSONPaths file named `log_json_path.json` 
 
-Tables are organized into a star schema with **songplays** as the fact table at the center and dimension tables **users, songs, artists,** and **time** surroundind that.
+
+## Database schema
+
+Tables are organized into a star schema with **songplays** as the fact table at the center and dimension tables **users, songs, artists,** and **time** surrounding that.
 
 - **songplays**: records in log data associated with song plays i.e. records with page NextSong
     - songplay_id, start_time, user_id, level, song_id, artist_id, session_id, location, user_agent
@@ -74,16 +96,16 @@ Tables are organized into a star schema with **songplays** as the fact table at 
 ![](images/sparkify_schema.png)
 
 
-### Repo file descriptions
+## Repo file descriptions
 
 The following files are included in this repository:
 
-- /data - directory holding all of the raw data (see above for details)
 - /images - images for the readme file
+- etl.py - main python script that creates the cloud instance and does the ETL
+- etl.ipynb - Jupyter notebook for exploratory data analysis and testing of functions
 - create_tables.py - helper functions to connect to PostGreSQL and create the sparkify database
-- etl.ipynb - notebook for exploratory data analysis and testing of functions
-- etl.py - python functions that perform the extraction, transformation and loading of data
-- README.md - this file
 - sql_queries.py - helper functions to put all SQL commands together
 - test.ipynb - notebook for validating the database records
+- .gitignore - list of files not tracked by git
+- README.md - this file
 
