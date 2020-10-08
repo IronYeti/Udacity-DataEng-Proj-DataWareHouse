@@ -12,6 +12,33 @@ This program will *extract* data from song & log files, *transform* the data, an
 3. Run the python script `!python3 etl.py`
     
 
+## Requirements
+
+### AWS S3 bucket
+
+The raw data must be keep in an AWS S3 bucket with path `s3://udacity-dend/`
+
+### Configuration file
+
+A file named dwh.cfg must exist in the same directory as etl.py.  It must contain these entries:
+
+```
+[AWS]
+key = {your_aws_key}
+secret = {your_aws_secret}
+
+[DWH]
+dwh_cluster_type = multi-node
+dwh_num_nodes = 4
+dwh_node_type = dc2.large
+dwh_iam_role_name = dwhRole
+dwh_cluster_identifier = dwhCluster
+dwh_db = dwh
+dwh_db_user = dwhadmin
+dwh_db_password = Passw0rd
+dwh_port = 5439
+```
+
 ## Technical Overview
 
 ### Raw data

@@ -5,8 +5,9 @@ import configparser
 config = configparser.ConfigParser()
 config.read('dwh.cfg')
 # IAM_ROLE_ARN = config.get("IAM_ROLE", "ARN")
-DWH_IAM_ROLE_ARN = config.get("DWH", "DWH_RS_ROLE_ARN")
-S3_EVENT_DATA_JSON_PATH = config.get("S3", "log_data_json_path")
+DWH_IAM_ROLE_ARN = config.get("DWH", "DWH_ROLE_ARN")
+# S3_EVENT_DATA_JSON_PATH = config.get("S3", "log_data_json_path")
+S3_EVENT_DATA_JSON_PATH="s3://udacity-dend/log_json_path.json"
 
 # DROP TABLES
 
@@ -205,6 +206,7 @@ INSERT INTO time (start_time, hour, day, week, month, year, weekday)
 """)
 
 # VALIDATION QUERIES
+
 check_staging_events = "SELECT COUNT(*) FROM staging_events;"
 check_staging_songs = "SELECT COUNT(*) FROM staging_songs;"
 check_songplays = "SELECT COUNT(*) FROM songplays;"
