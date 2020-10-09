@@ -73,7 +73,7 @@ CREATE TABLE IF NOT EXISTS songplays (
     start_time  TIMESTAMP,
     user_id     VARCHAR REFERENCES users(user_id) NOT NULL,
     level       VARCHAR,
-    song_id     VARCHAR,
+    song_id     VARCHAR REFERENCES songs(song_id) NOT NULL,
     artist_id   VARCHAR REFERENCES artists(artist_id) NOT NULL,
     session_id  INT,
     location    VARCHAR,
@@ -156,7 +156,7 @@ SELECT DISTINCT
         e.location,
         e.userAgent AS user_agent
     FROM staging_songs s
-    RIGHT JOIN staging_events e ON s.artist_name = e.artist AND s.title = e.song
+    RIGHT JOIN staging_events e ON s.artist_name = e.artist AND s.title = e.song AND e.length = s.duration
     WHERE e.page = 'NextSong' AND song_id IS NOT NULL
 """)
 
